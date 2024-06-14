@@ -1,0 +1,54 @@
+name: Laravel
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.0'
+    - name: Install dependencies
+      run: composer install
+    - name: Run migrations
+      run: php artisan migrate --force
+    - name: Run tests
+      run: php artisan test
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v3
+      with:
+        script: |
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          });
+          const mailOptions = {
+            from: eangchheangkang@gmail.com,
+            to: 'tongsreng@itc.edu.kh',
+            subject: 'Build Failed',
+            text: 'The build has failed. Please check the CI logs for details.',
+          };
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+          });
+      env:
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
