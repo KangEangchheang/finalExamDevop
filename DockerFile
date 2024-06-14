@@ -1,0 +1,27 @@
+# Use official PHP image as base
+FROM php:8.2-apache
+
+# Install necessary PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Set the working directory
+WORKDIR /var/www/html
+
+# Clone the Laravel project
+RUN apt-get update && apt-get install -y git \
+    && git clone -b master https://github.com/KangEangchheang/finalExamDevop .
+
+# Install composer and Laravel dependencies
+RUN apt-get install -y zip unzip \
+    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && composer install --prefer-dist --no-dev --no-scripts --no-interaction
+
+# Set file permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache server
+CMD ["apache2-foreground"]
